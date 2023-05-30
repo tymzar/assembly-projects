@@ -55,6 +55,11 @@ int main()
 
   int result = encodeRM4SCC(dest_bitmap.data(), bar_width, text);
 
+  if (result == 1)
+  {
+    throw std::runtime_error("Error: Invalid text to encode");
+  }
+
   if (result == 0)
   {
     std::ofstream file("output.bmp", std::ios::binary);

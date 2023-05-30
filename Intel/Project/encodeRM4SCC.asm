@@ -105,15 +105,21 @@ encodeRM4SCC:
 
         mov edx, ZERO_ASCII
 
+
+
+        mov al, bl
+        call is_valid_character
+        cmp eax, 0
+        je invalid_character
+
         mov al, bl
         call is_uppercase_character
 
         cmp eax, 0
-        ; je char_encoding
+        je char_encoding
 
         add edx, SYMBOL_OFFSET
 
-        ;;;;To fix
         
         char_encoding:
 
@@ -135,8 +141,8 @@ encodeRM4SCC:
         idiv ebx
 
 
-        ; Now EAX contains the quotient (ECX % 3)
-        ; Now EDX contains the remainder (EDX % 3)
+        ; Now EAX contains the quotient 
+        ; Now EDX contains the remainder 
 
         ; Add EAX to the top checksum
         add dword  [top_checksum], eax
@@ -209,7 +215,12 @@ encodeRM4SCC:
     loop_end:
 
     ;from the top checksum substract 1
-    mov ecx, dword  [top_checksum]
+    mov ecx, dword [top_checksum]
+    ; if rcx is 0 then set it to 6
+    cmp ecx, 0
+    jne proces_top_checksum
+    mov ecx, 6
+    proces_top_checksum:
     sub ecx, 1
     ;load valie from codes of index top checksum
     mov bl, byte [codes + ecx]
@@ -223,7 +234,14 @@ encodeRM4SCC:
     add esp, 12
 
     ;from the bottom checksum substract 1
-    mov ecx, dword  [bottom_checksum]
+    mov ecx, dword [bottom_checksum]
+
+    ; if rcx is 0 then set it to 6
+    cmp ecx, 0
+    jne proces_bottom_checksum
+    mov ecx, 6
+    proces_bottom_checksum:
+ 
     sub ecx, 1
     ;load valie from codes of index bottom checksum
     mov bl, byte [codes + ecx]
@@ -249,12 +267,19 @@ encodeRM4SCC:
     add esp, 12
 
 
-
-done:
     mov eax, 0            ;return replace_count
     pop ebx                 ; Restore ebx register
     pop ebp
-    ret                     ;return and clean the stack           
+    ret   
+
+invalid_character:
+    mov eax, 1            ;return replace_count
+
+done:
+    pop ebx                 ; Restore ebx register
+    pop ebp
+    ret                     ;return and clean the stack
+    
 ; ============================================================================
 ; description: 
 ; 	takes in a0 the 8 byte configuration top codes
@@ -442,6 +467,30 @@ is_uppercase_character:
 .not_uppercase:
     mov eax, 0
     ret
+; ========================================================================
+; function is_valid_character chech is the character is ther 0-9 or A-Z if it is return 1 else 0
+is_valid_character:
+    ; check is the character is 0-9
+    cmp al, '0'
+    jl .not_valid
+    cmp al, 'Z'
+    jg .not_valid
+
+    cmp al, '9'
+    jle .valid
+
+    ; check is the character is A-Z
+    cmp al, 'A'
+    jge .valid
+    
+.not_valid:
+    mov eax, 0
+    ret
+
+.valid:
+    mov eax, 1
+    ret 
+    
 ;=========================================================================
 put_pixel:
     push    ebp
